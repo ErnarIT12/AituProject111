@@ -1,27 +1,20 @@
-public class EBook {
+public class EBook extends Item {
         //Attributes
-        private String title;
-        private String  isbn;
-        private String author;
-        private boolean available;
         private double fileSizeMB;
         private String fileFormat;
         private boolean isDownloaded;
         //init or construct
         public EBook(String title, String isbn, String author){
-            this.author = author;
-            this.isbn = isbn;
-            this.title = title;
+                super(title, isbn, author);
         }
-        //Getter
-        public String getTitle(){return title;}
-        public String getIsbn(){return isbn;}
-        public String getAuthor(){return author;}
-        public boolean isAvailable(){return available;}
+        // Getter
+        public double getFileSizeMB(){return fileSizeMB;}
+        public String getFileFormat(){return fileFormat;}
+        public boolean getDownloaded(){return isDownloaded;}
         //Setter
-        public void setTitle(String title){this.title = title;}
-        public void setIsbn(String isbn){this.isbn = isbn;}
-        public void setAuthor(){this.author = author;}
+        public void setFileSizeMB(double fileSizeMB){this.fileSizeMB = fileSizeMB;}
+        public void setFileFormat(String fileFormat){this.fileFormat = fileFormat;}
+        public void setDownloaded(boolean isDownloaded){this.isDownloaded = isDownloaded;}
 
 
 }

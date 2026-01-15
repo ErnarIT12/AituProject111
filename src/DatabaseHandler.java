@@ -35,10 +35,10 @@ public class DatabaseHandler {
             }
 
             stmt.executeUpdate();
-            System.out.println("✅ User saved to database!");
+            System.out.println(" User saved to database!");
 
         } catch (SQLException e) {
-            System.out.println("❌ Error adding user: " + e.getMessage());
+            System.out.println(" Error adding user: " + e.getMessage());
         }
     }
 
@@ -65,7 +65,7 @@ public class DatabaseHandler {
                 }
             }
         } catch (SQLException e) {
-            System.out.println("❌ Error loading users: " + e.getMessage());
+            System.out.println("Error loading users: " + e.getMessage());
         }
         return users;
     }
@@ -81,13 +81,62 @@ public class DatabaseHandler {
             int rows = stmt.executeUpdate();
 
             if (rows > 0) {
-                System.out.println("✅ User deleted.");
+                System.out.println("User deleted.");
             } else {
-                System.out.println("⚠️ User not found.");
+                System.out.println("User not found.");
             }
 
         } catch (SQLException e) {
-            System.out.println("❌ Error deleting user: " + e.getMessage());
+            System.out.println("Error deleting user: " + e.getMessage());
+        }
+    }
+    // ================== BOOKS (КНИГИ - НОВОЕ!) ==================
+
+    public void addBook(EBook book) {
+        String query = "INSERT INTO books (title, author, isbn) VALUES (?, ?, ?)";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setString(1, book.getTitle());
+            stmt.setString(2, book.getAuthor());
+            stmt.setString(3, book.getIsbn());
+
+            stmt.executeUpdate();
+            System.out.println(" Book saved to database!");
+        } catch (SQLException e) {
+            System.out.println(" Error adding book: " + e.getMessage());
+        }
+    }
+
+    public List<EBook> getAllBooks() {
+        List<EBook> books = new ArrayList<>();
+        String query = "SELECT * FROM books";
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            while (rs.next()) {
+                String title = rs.getString("title");
+                String author = rs.getString("author");
+                String isbn = rs.getString("isbn");
+                // Создаем книгу и добавляем в список
+                books.add(new EBook(title, isbn, author));
+            }
+        } catch (SQLException e) {
+            System.out.println(" Error loading books: " + e.getMessage());
+        }
+        return books;
+    }
+
+    public void deleteBook(String isbn) {
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement("DELETE FROM books WHERE isbn = ?")) {
+            stmt.setString(1, isbn);
+            int rows = stmt.executeUpdate();
+            if (rows > 0) System.out.println(" Book deleted.");
+            else System.out.println("️ Book not found.");
+        } catch (SQLException e) {
+            System.out.println("Error: " + e.getMessage());
         }
     }
 }

@@ -4,8 +4,6 @@ import java.util.List;
 
 public class DatabaseHandler {
     // === НАСТРОЙКИ ПОДКЛЮЧЕНИЯ ===
-    // 1. Убедись, что имя базы данных (library_db) совпадает с тем, что ты создал в pgAdmin
-    // 2. Впиши свой пароль вместо YOUR_PASSWORD
     private static final String URL = "jdbc:postgresql://localhost:5432/library_db";
     private static final String USER = "postgres";
     private static final String PASSWORD = "hinifi51";

@@ -21,6 +21,11 @@ public class LibraryService {
         return userRepo.getAllUsers();
     }
 
+    public LibraryUser getUserById(int id) {
+        return userRepo.getUserById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+    }
+
     public void registerStudent(String name, int year) {
         Student student = new Student(0, name, year);
         userRepo.addUser(student);
@@ -32,11 +37,15 @@ public class LibraryService {
     }
 
     public void removeUser(int id) {
-        userRepo.deleteUser(id);
+        if (!userRepo.deleteUser(id)) {
+            throw new ResourceNotFoundException("Cannot delete. User not found with id: " + id);
+        }
     }
 
     public void updateUserName(int id, String newName) {
-        userRepo.updateUser(id, newName);
+        if (!userRepo.updateUser(id, newName)) {
+            throw new ResourceNotFoundException("Cannot update. User not found with id: " + id);
+        }
     }
 
     // --- BOOKS LOGIC ---
@@ -45,16 +54,24 @@ public class LibraryService {
         return bookRepo.getAllBooks();
     }
 
+    public EBook getBookByIsbn(String isbn) {
+        return bookRepo.getBookByIsbn(isbn)
+                .orElseThrow(() -> new ResourceNotFoundException("Book not found with ISBN: " + isbn));
+    }
+
     public void addNewBook(String title, String isbn, String author) {
-        EBook book = new EBook(title, isbn, author);
-        bookRepo.addBook(book);
+        bookRepo.addBook(new EBook(title, isbn, author));
     }
 
     public void removeBook(String isbn) {
-        bookRepo.deleteBook(isbn);
+        if (!bookRepo.deleteBook(isbn)) {
+            throw new ResourceNotFoundException("Cannot delete. Book not found with ISBN: " + isbn);
+        }
     }
 
     public void updateBookDetails(String isbn, String newTitle, String newAuthor) {
-        bookRepo.updateBook(isbn, newTitle, newAuthor);
+        if (!bookRepo.updateBook(isbn, newTitle, newAuthor)) {
+            throw new ResourceNotFoundException("Cannot update. Book not found with ISBN: " + isbn);
+        }
     }
 }

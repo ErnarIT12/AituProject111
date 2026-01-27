@@ -4,9 +4,10 @@ import org.springframework.stereotype.Repository;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
-public class PostgresUserRepository implements com.aitu.library.UserRepository {
+public class PostgresUserRepository implements UserRepository {
 
     @Override
     public void addUser(LibraryUser user) {
@@ -43,17 +44,7 @@ public class PostgresUserRepository implements com.aitu.library.UserRepository {
              ResultSet rs = stmt.executeQuery(query)) {
 
             while (rs.next()) {
-                int id = rs.getInt("id");
-                String name = rs.getString("username");
-                String type = rs.getString("user_type");
-
-                if ("STUDENT".equals(type)) {
-                    int year = rs.getInt("year_of_study");
-                    users.add(new Student(id, name, year));
-                } else if ("TEACHER".equals(type)) {
-                    String dept = rs.getString("department");
-                    users.add(new Teacher(id, name, dept));
-                }
+                users.add(mapRowToUser(rs));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -62,27 +53,64 @@ public class PostgresUserRepository implements com.aitu.library.UserRepository {
     }
 
     @Override
-    public void deleteUser(int id) {
+    public Optional<LibraryUser> getUserById(int id) {
+        String query = "SELECT * FROM users WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setInt(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapRowToUser(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public boolean deleteUser(int id) {
         String query = "DELETE FROM users WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
             stmt.setInt(1, id);
-            stmt.executeUpdate();
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            return false;
         }
     }
 
     @Override
-    public void updateUser(int id, String newName) {
+    public boolean updateUser(int id, String newName) {
         String query = "UPDATE users SET username = ? WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
             stmt.setString(1, newName);
             stmt.setInt(2, id);
-            stmt.executeUpdate();
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            return false;
         }
+    }
+
+    private LibraryUser mapRowToUser(ResultSet rs) throws SQLException {
+        int id = rs.getInt("id");
+        String name = rs.getString("username");
+        String type = rs.getString("user_type");
+
+        if ("STUDENT".equals(type)) {
+            int year = rs.getInt("year_of_study");
+            return new Student(id, name, year);
+        } else if ("TEACHER".equals(type)) {
+            String dept = rs.getString("department");
+            return new Teacher(id, name, dept);
+        }
+        return new LibraryUser(id, name); // Fallback
     }
 }

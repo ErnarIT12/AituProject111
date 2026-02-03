@@ -9,3 +9,4 @@ public class LibraryApplication {
         SpringApplication.run(LibraryApplication.class, args);
     }
 }
+//http://localhost:8080/swagger-ui/index.html

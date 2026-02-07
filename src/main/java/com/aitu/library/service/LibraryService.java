@@ -34,13 +34,11 @@ public class LibraryService {
     }
 
     public void registerStudent(String name, int year) {
-        // Using Factory Pattern
         LibraryUser student = UserFactory.createUser("STUDENT", name, year, null);
         userRepo.addUser(student);
     }
 
     public void registerTeacher(String name, String department) {
-        // Using Factory Pattern
         LibraryUser teacher = UserFactory.createUser("TEACHER", name, 0, department);
         userRepo.addUser(teacher);
     }
@@ -63,7 +61,6 @@ public class LibraryService {
         return bookRepo.getAllBooks();
     }
 
-    // In-memory processing (Sorting & Filtering) using Streams
     public List<EBook> getSortedBooks(String sortBy) {
         List<EBook> allBooks = bookRepo.getAllBooks();
         
@@ -89,7 +86,6 @@ public class LibraryService {
     }
 
     public void addNewBook(String title, String isbn, String author) {
-        // Using Builder Pattern
         EBook book = new EBook.Builder()
                 .setTitle(title)
                 .setIsbn(isbn)
@@ -108,5 +104,32 @@ public class LibraryService {
         if (!bookRepo.updateBook(isbn, newTitle, newAuthor)) {
             throw new ResourceNotFoundException("Cannot update. Book not found with ISBN: " + isbn);
         }
+    }
+
+    // --- BORROWING LOGIC (НОВОЕ) ---
+
+    public void borrowBook(int userId, String isbn) {
+        // 1. Проверяем, существует ли пользователь
+        LibraryUser user = getUserById(userId);
+
+        // 2. Проверяем, существует ли книга и доступна ли она
+        if (!bookRepo.isBookAvailable(isbn)) {
+            throw new IllegalStateException("Book is not available or does not exist.");
+        }
+
+        // 3. Проверяем лимит пользователя
+        int currentBorrowedCount = bookRepo.countBooksBorrowedByUser(userId);
+        if (currentBorrowedCount >= user.getBorrowLimit()) {
+            throw new IllegalStateException("User has reached their borrow limit (" + user.getBorrowLimit() + " books).");
+        }
+
+        // 4. Выдаем книгу
+        bookRepo.recordBorrow(userId, isbn);
+        bookRepo.setBookAvailability(isbn, false); // Книга больше недоступна
+    }
+
+    public void returnBook(int userId, String isbn) {
+        bookRepo.recordReturn(userId, isbn);
+        bookRepo.setBookAvailability(isbn, true); // Книга снова доступна
     }
 }

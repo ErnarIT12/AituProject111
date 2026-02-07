@@ -13,13 +13,14 @@ public class PostgresBookRepository implements BookRepository {
 
     @Override
     public void addBook(EBook book) {
-        String query = "INSERT INTO books (title, author, isbn) VALUES (?, ?, ?)";
+        String query = "INSERT INTO books (title, author, isbn, available) VALUES (?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
 
             stmt.setString(1, book.getTitle());
             stmt.setString(2, book.getAuthor());
             stmt.setString(3, book.getIsbn());
+            stmt.setBoolean(4, true); // Новая книга всегда доступна
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new DatabaseOperationException("Error adding book with ISBN: " + book.getIsbn(), e);
@@ -92,7 +93,6 @@ public class PostgresBookRepository implements BookRepository {
     @Override
     public List<EBook> searchBooks(String keyword) {
         List<EBook> books = new ArrayList<>();
-        // Поиск по названию или автору (без учета регистра)
         String query = "SELECT * FROM books WHERE LOWER(title) LIKE LOWER(?) OR LOWER(author) LIKE LOWER(?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -112,10 +112,80 @@ public class PostgresBookRepository implements BookRepository {
         return books;
     }
 
+    // --- НОВЫЕ МЕТОДЫ ---
+    @Override
+    public boolean isBookAvailable(String isbn) {
+        String query = "SELECT available FROM books WHERE isbn = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, isbn);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() && rs.getBoolean("available");
+            }
+        } catch (SQLException e) {
+            throw new DatabaseOperationException("Error checking availability for book: " + isbn, e);
+        }
+    }
+
+    @Override
+    public void setBookAvailability(String isbn, boolean available) {
+        String query = "UPDATE books SET available = ? WHERE isbn = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setBoolean(1, available);
+            stmt.setString(2, isbn);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DatabaseOperationException("Error updating availability for book: " + isbn, e);
+        }
+    }
+
+    @Override
+    public int countBooksBorrowedByUser(int userId) {
+        String query = "SELECT COUNT(*) FROM borrowed_books WHERE user_id = ? AND return_date IS NULL";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setInt(1, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        } catch (SQLException e) {
+            throw new DatabaseOperationException("Error counting borrowed books for user: " + userId, e);
+        }
+    }
+
+    @Override
+    public void recordBorrow(int userId, String isbn) {
+        String query = "INSERT INTO borrowed_books (user_id, book_isbn) VALUES (?, ?)";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setInt(1, userId);
+            stmt.setString(2, isbn);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DatabaseOperationException("Error recording borrow for user: " + userId, e);
+        }
+    }
+
+    @Override
+    public void recordReturn(int userId, String isbn) {
+        String query = "UPDATE borrowed_books SET return_date = CURRENT_TIMESTAMP WHERE user_id = ? AND book_isbn = ? AND return_date IS NULL";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setInt(1, userId);
+            stmt.setString(2, isbn);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DatabaseOperationException("Error recording return for user: " + userId, e);
+        }
+    }
+
     private EBook mapRowToBook(ResultSet rs) throws SQLException {
         String title = rs.getString("title");
         String author = rs.getString("author");
         String isbn = rs.getString("isbn");
-        return new EBook(title, isbn, author);
+        EBook book = new EBook(title, isbn, author);
+        book.setAvailable(rs.getBoolean("available"));
+        return book;
     }
 }

@@ -47,4 +47,22 @@ public class BookController {
         libraryService.updateBookDetails(isbn, title, author);
         return "Book updated successfully";
     }
+
+    // --- НОВЫЕ ЭНДПОИНТЫ ДЛЯ ВЫДАЧИ ---
+
+    @PostMapping("/{isbn}/borrow")
+    public String borrowBook(@PathVariable String isbn, @RequestParam int userId) {
+        try {
+            libraryService.borrowBook(userId, isbn);
+            return "Book borrowed successfully";
+        } catch (IllegalStateException e) {
+            return "Error: " + e.getMessage();
+        }
+    }
+
+    @PostMapping("/{isbn}/return")
+    public String returnBook(@PathVariable String isbn, @RequestParam int userId) {
+        libraryService.returnBook(userId, isbn);
+        return "Book returned successfully";
+    }
 }

@@ -11,5 +11,12 @@ public interface BookRepository {
     Optional<EBook> getBookByIsbn(String isbn);
     boolean deleteBook(String isbn);
     boolean updateBook(String isbn, String newTitle, String newAuthor);
-    List<EBook> searchBooks(String keyword); // метод поиска
+    List<EBook> searchBooks(String keyword);
+
+    // --- НОВЫЕ МЕТОДЫ ДЛЯ ВЫДАЧИ ---
+    boolean isBookAvailable(String isbn);
+    void setBookAvailability(String isbn, boolean available);
+    int countBooksBorrowedByUser(int userId);
+    void recordBorrow(int userId, String isbn);
+    void recordReturn(int userId, String isbn);
 }
